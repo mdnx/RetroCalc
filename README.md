@@ -27,11 +27,11 @@ RetroCalc requires Python 3.6 or higher. We recommend using a virtual environmen
 
 ```bash
 # Clone the repository
-git clone https://github.com/mdnx/RetroCalc.git
-cd RetroCalc
+!git clone https://github.com/mdnx/RetroCalc.git
+%cd RetroCalc
 
-# Install dependencies
-pip install -r requirements.txt
+# Install
+!pip install -r RetroCalc/requirements.txt
 ```
 # Usage
 
