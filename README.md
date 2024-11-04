@@ -21,7 +21,6 @@ RetroCalc requires Python 3.6 or higher. I  recommend using colab environment.
 
 
 ```
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -94,15 +93,19 @@ def calculate_confusion_matrix(pos_cohort, neg_cohort, metrics):
 
         # Check if TP, TN, FP, and FN were calculated successfully
         if TP is not None and TN is not None and FP is not None and FN is not None:
+            # Round values to integers
+            TP, TN, FP, FN = round(TP), round(TN), round(FP), round(FN)
+            
+            # Calculate metrics again based on rounded values
             calculated_metrics = {
-                'sensitivity': TP / pos_cohort if sensitivity is None else sensitivity,
-                'specificity': TN / neg_cohort if specificity is None else specificity,
-                'precision': TP / (TP + FP) if precision is None else precision,
-                'npv': TN / (TN + FN) if npv is None else npv,
-                'f1_score': 2 * TP / (2 * TP + FP + FN) if f1_score is None else f1_score,
-                'lr_pos': (TP / (TP + FN)) / (FP / (FP + TN)) if lr_pos is None else lr_pos,
-                'lr_neg': (FN / (TP + FN)) / (TN / (FP + TN)) if lr_neg is None else lr_neg,
-                'accuracy': (TP + TN) / (TP + TN + FP + FN)  # Calculating accuracy
+                'sensitivity': TP / pos_cohort,
+                'specificity': TN / neg_cohort,
+                'precision': TP / (TP + FP) if (TP + FP) > 0 else None,
+                'npv': TN / (TN + FN) if (TN + FN) > 0 else None,
+                'f1_score': 2 * TP / (2 * TP + FP + FN) if (2 * TP + FP + FN) > 0 else None,
+                'lr_pos': (TP / (TP + FN)) / (FP / (FP + TN)) if (TP + FN) > 0 and (FP + TN) > 0 else None,
+                'lr_neg': (FN / (TP + FN)) / (TN / (FP + TN)) if (TP + FN) > 0 and (FP + TN) > 0 else None,
+                'accuracy': (TP + TN) / (TP + TN + FP + FN) if (TP + TN + FP + FN) > 0 else None
             }
             return {'TP': TP, 'TN': TN, 'FP': FP, 'FN': FN}, calculated_metrics
         else:
