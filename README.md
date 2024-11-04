@@ -12,84 +12,159 @@ RetroCalc is a diagnostic metrics recalculation tool designed to allow researche
 - Easy integration into other Python projects or as a standalone tool
 - Designed for clinical and meta-analysis applications
 
-## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Documentation](#documentation)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
 
 ## Installation
-RetroCalc requires Python 3.6 or higher. We recommend using a virtual environment.
+RetroCalc requires Python 3.6 or higher. I  recommend using colab environment.
 
-```bash
-# Clone the repository
-!git clone https://github.com/mdnx/RetroCalc.git
-%cd RetroCalc
 
-# Install
-!pip install -r RetroCalc/requirements.txt
-```
 # Usage
 
 
-
-To use RetroCalc, you can run the main script or integrate it into your own project.
 ```
 
-from retrocalc.calculator import calculate_confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# Function to calculate TP, TN, FP, FN from given metrics and cohort sizes
+def calculate_confusion_matrix(pos_cohort, neg_cohort, metrics):
+    # Extract values from the dictionary
+    sensitivity = metrics.get('sensitivity')
+    specificity = metrics.get('specificity')
+    precision = metrics.get('precision')
+    npv = metrics.get('npv')
+    f1_score = metrics.get('f1_score')
+    lr_pos = metrics.get('lr_pos')
+    lr_neg = metrics.get('lr_neg')
+    accuracy = metrics.get('accuracy')
+    
+    # Initialize variables for TP, TN, FP, FN
+    TP = TN = FP = FN = None
+
+    try:
+        # Pair 1: Sensitivity and Specificity
+        if sensitivity is not None and specificity is not None:
+            TP = sensitivity * pos_cohort
+            FN = pos_cohort - TP
+            TN = specificity * neg_cohort
+            FP = neg_cohort - TN
+
+        # Pair 2: Sensitivity and Precision (PPV)
+        elif sensitivity is not None and precision is not None:
+            TP = (sensitivity * precision * pos_cohort) / (sensitivity * precision + (1 - sensitivity) * (1 - precision))
+            FN = pos_cohort - TP
+            FP = (TP * (1 - precision)) / precision
+            TN = neg_cohort - FP
+
+        # Pair 3: Sensitivity and NPV
+        elif sensitivity is not None and npv is not None:
+            TN = npv * neg_cohort
+            FP = neg_cohort - TN
+            TP = sensitivity * pos_cohort
+            FN = pos_cohort - TP
+
+        # Pair 4: Sensitivity and F1 Score
+        elif sensitivity is not None and f1_score is not None:
+            precision = (f1_score * sensitivity) / (2 * sensitivity - f1_score)
+            TP = (precision * sensitivity * pos_cohort) / (sensitivity + precision - (sensitivity * precision))
+            FN = pos_cohort - TP
+            FP = (TP * (1 - precision)) / precision
+            TN = neg_cohort - FP
+
+        # Pair 5: Specificity and Precision (PPV)
+        elif specificity is not None and precision is not None:
+            TP = (precision * specificity * neg_cohort) / (precision + specificity - (precision * specificity))
+            FN = pos_cohort - TP
+            FP = neg_cohort - TN
+            TN = neg_cohort - FP
+
+        # Pair 6: Accuracy and Sensitivity
+        elif accuracy is not None and sensitivity is not None:
+            TP = sensitivity * pos_cohort
+            FN = pos_cohort - TP
+            FP = (1 - accuracy) * (pos_cohort + neg_cohort) - FN
+            TN = neg_cohort - FP
+
+        # Pair 7: Accuracy and Specificity
+        elif accuracy is not None and specificity is not None:
+            TN = specificity * neg_cohort
+            FP = neg_cohort - TN
+            TP = (accuracy * (pos_cohort + neg_cohort)) - TN
+            FN = pos_cohort - TP
+
+        # Check if TP, TN, FP, and FN were calculated successfully
+        if TP is not None and TN is not None and FP is not None and FN is not None:
+            calculated_metrics = {
+                'sensitivity': TP / pos_cohort if sensitivity is None else sensitivity,
+                'specificity': TN / neg_cohort if specificity is None else specificity,
+                'precision': TP / (TP + FP) if precision is None else precision,
+                'npv': TN / (TN + FN) if npv is None else npv,
+                'f1_score': 2 * TP / (2 * TP + FP + FN) if f1_score is None else f1_score,
+                'lr_pos': (TP / (TP + FN)) / (FP / (FP + TN)) if lr_pos is None else lr_pos,
+                'lr_neg': (FN / (TP + FN)) / (TN / (FP + TN)) if lr_neg is None else lr_neg,
+                'accuracy': (TP + TN) / (TP + TN + FP + FN)  # Calculating accuracy
+            }
+            return {'TP': TP, 'TN': TN, 'FP': FP, 'FN': FN}, calculated_metrics
+        else:
+            return None, "Not enough information to calculate TP, TN, FP, FN"
+
+    except (ZeroDivisionError, TypeError) as e:
+        return None, f"Error in calculation: {e}"
+
+# Function to plot confusion matrix
+def plot_confusion_matrix(confusion_values):
+    TP, TN, FP, FN = confusion_values['TP'], confusion_values['TN'], confusion_values['FP'], confusion_values['FN']
+    matrix = np.array([[TP, FN], [FP, TN]])
+
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(matrix, annot=True, fmt=".1f", cmap="Blues", xticklabels=["Predicted Positive", "Predicted Negative"], yticklabels=["Actual Positive", "Actual Negative"])
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.show()
+
+# Prompt user for inputs
+def get_user_inputs():
+    try:
+        pos_cohort = float(input("Enter the positive cohort size (TP + FN): "))
+        neg_cohort = float(input("Enter the negative cohort size (TN + FP): "))
+    except ValueError:
+        print("Invalid input for cohort sizes.")
+        return None, None, None
+
+    inputs = {}
+    for metric in ['sensitivity', 'specificity', 'precision', 'npv', 'f1_score', 'lr_pos', 'lr_neg', 'accuracy']:
+        try:
+            value = input(f"Enter {metric.replace('_', ' ').title()}, or NA if not available: ")
+            inputs[metric] = float(value) if value.strip().upper() != "NA" else None
+        except ValueError:
+            inputs[metric] = None
+
+    return pos_cohort, neg_cohort, inputs
+
+# Run the calculation
+pos_cohort, neg_cohort, user_inputs = get_user_inputs()
+if pos_cohort is not None and neg_cohort is not None:
+    results, additional_metrics = calculate_confusion_matrix(pos_cohort, neg_cohort, user_inputs)
+
+    if results:
+        print("\nCalculated Confusion Matrix Values:")
+        print("TP (True Positives):", results['TP'])
+        print("TN (True Negatives):", results['TN'])
+        print("FP (False Positives):", results['FP'])
+        print("FN (False Negatives):", results['FN'])
+        print("\nAdditional Calculated Metrics:")
+        for metric, value in additional_metrics.items():
+            print(f"{metric.replace('_', ' ').title()}: {value}")
+
+        # Plot the confusion matrix
+        plot_confusion_matrix(results)
+    else:
+        print(additional_metrics)
+else:
+    print("Calculation could not be completed due to insufficient inputs.")
 ```
-# Example usage
-```
-total_positive = 100  # TP + FN
-total_negative = 120  # TN + FP
-metrics = {
-    'sensitivity': 0.78,
-    'specificity': 0.87,
-    'precision': None,
-    'npv': None,
-    'f1_score': None,
-    'lr_pos': None,
-    'lr_neg': None,
-    'accuracy': None
-}
 
-results, additional_metrics = calculate_confusion_matrix(total_positive, total_negative, metrics)
-print("Confusion Matrix:", results)
-print("Additional Metrics:", additional_metrics)
-```
-# Examples
-
-Example 1: Sensitivity and Specificity Calculation
-
-Input:
-
-Sensitivity: 0.85
-
-Specificity: 0.90
-
-
-Output:
-
-Confusion Matrix: TP, TN, FP, FN
-
-Additional Calculated Metrics: Precision, NPV, etc.
-
-please note that at least two metrics (see manuscript for more information) along with number of participants are required. 
-
-# Documentation
-
-Detailed documentation for each function and module is available in the docs folder.
-
-Testing
-
-To run tests, make sure you have pytest installed:
-
-pip install pytest
-pytest tests/
 
 # Contributing
 
