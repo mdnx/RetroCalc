@@ -1,0 +1,5 @@
+
+with open("RetroCalc/requirements.txt", "w") as f:
+    f.write("numpy\n")
+    f.write("pandas\n")
+    f.write("matplotlib\n") 
