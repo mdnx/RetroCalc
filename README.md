@@ -71,10 +71,11 @@ def calculate_confusion_matrix(pos_cohort, neg_cohort, metrics):
             TN = neg_cohort - FP
         # Pair 5: Specificity and Precision (PPV)
         elif specificity is not None and precision is not None:
+            TN = specificity * neg_cohort
+            FP = neg_cohort - TN
             TP = precision* (FP) / (1 - precision)
             FN = pos_cohort - TP
-            FP = neg_cohort - TN
-            TN = specificity * neg_cohort
+            
 
         # Pair 6: Accuracy and Sensitivity
         elif accuracy is not None and sensitivity is not None:
@@ -108,7 +109,7 @@ def calculate_confusion_matrix(pos_cohort, neg_cohort, metrics):
 
         # Pair 10: specificity and LRP
         elif specificity is not None and lr_pos is not None:
-            sensitivity = lr_pos (1 - specificity) 
+            sensitivity = lr_pos * (1 - specificity) 
             TP = sensitivity * pos_cohort
             FN = pos_cohort - TP
             TN = specificity * neg_cohort
@@ -127,7 +128,7 @@ def calculate_confusion_matrix(pos_cohort, neg_cohort, metrics):
         elif sensitivity is not None and lr_neg is not None: 
             TP = sensitivity * pos_cohort
             FN = pos_cohort - TP
-            TN = (1 - sensitivity)/ lr_neg * neg_cohort
+            TN = ((1 - sensitivity)/ lr_neg) * neg_cohort
             FP = neg_cohort - TN
 
         # Check if TP, TN, FP, and FN were calculated successfully
