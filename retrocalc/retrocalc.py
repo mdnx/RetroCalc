@@ -174,4 +174,25 @@ def get_user_inputs():
 
     return pos_cohort, neg_cohort, inputs
 
+# Run the calculation
+pos_cohort, neg_cohort, user_inputs = get_user_inputs()
+if pos_cohort is not None and neg_cohort is not None:
+    results, additional_metrics = calculate_confusion_matrix(pos_cohort, neg_cohort, user_inputs)
+
+    if results:
+        print("\nCalculated Confusion Matrix Values:")
+        print("TP (True Positives):", results['TP'])
+        print("TN (True Negatives):", results['TN'])
+        print("FP (False Positives):", results['FP'])
+        print("FN (False Negatives):", results['FN'])
+        print("\nAdditional Calculated Metrics:")
+        for metric, value in additional_metrics.items():
+            print(f"{metric.replace('_', ' ').title()}: {value}")
+
+        # Plot the confusion matrix
+        plot_confusion_matrix(results)
+    else:
+        print(additional_metrics)
+else:
+    print("Calculation could not be completed due to insufficient inputs.")
     pass
