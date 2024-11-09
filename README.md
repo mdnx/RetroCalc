@@ -14,7 +14,7 @@ RetroCalc is a diagnostic metrics recalculation tool designed to allow researche
 
 
 ## Installation
-RetroCalc requires Python 3.6 or higher. I  recommend using colab environment.
+No specific requirements.
 
 
 # Usage
