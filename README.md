@@ -47,6 +47,5 @@ please contact mdnrz1379@gmail.com
 RetroCalc is licensed under the MIT License. See the LICENSE file for details.
 
 # Acknowledgments
-
-
+I highly appreciate the expertise comments from proffessor Zeileis.
 
